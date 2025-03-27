@@ -1,0 +1,23 @@
+[
+  {
+    "text": "Nunca mais vou usar esse aplicativo novamente\n",
+    "sentiment": "negative",
+    "confidence": 95,
+    "id": 1,
+    "createdAt": "2025-03-27T11:51:32.111Z"
+  },
+  {
+    "text": "Não funciona como deveria\n",
+    "sentiment": "negative",
+    "confidence": 95,
+    "id": 2,
+    "createdAt": "2025-03-27T11:52:50.456Z"
+  },
+  {
+    "text": "Este aplicativo é maravilhoso",
+    "sentiment": "positive",
+    "confidence": 95,
+    "id": 3,
+    "createdAt": "2025-03-27T11:58:19.589Z"
+  }
+]
