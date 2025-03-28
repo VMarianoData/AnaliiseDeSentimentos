@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { analyzeSentiment } from "./services/gemini";
+import { analyzeSentiment } from "./services/ai";
 import { z } from "zod";
 import { SentimentType, analysisFormSchema } from "@shared/schema";
 
@@ -21,7 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const { text } = validation.data;
       
-      // Analisar o sentimento usando o serviço Gemini
+      // Analisar o sentimento usando o serviço de IA (Gemini/OpenAI)
       const analysis = await analyzeSentiment(text);
       
       // Mapear o resultado para o formato de armazenamento
@@ -51,6 +51,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+
+
+
+  // API para receber textos de aplicações Spring Boot foi movida para spring-integration.ts
 
   // API para obter todas as análises com filtros
   app.get("/api/analyses", async (req, res) => {

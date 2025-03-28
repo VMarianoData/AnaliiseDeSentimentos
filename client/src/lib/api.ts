@@ -2,7 +2,7 @@ import { apiRequest } from "./queryClient";
 import type { SentimentResponse, SentimentStats, SentimentFilters, AnalysisForm } from "@shared/schema";
 
 /**
- * Envia texto para análise de sentimento
+ * Envia texto para análise de sentimento usando o serviço de AI (Gemini/OpenAI)
  */
 export async function analyzeSentiment(text: string): Promise<SentimentResponse> {
   const res = await apiRequest("POST", "/api/analyze", { text });

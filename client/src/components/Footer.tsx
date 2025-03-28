@@ -1,16 +1,29 @@
 export function Footer() {
   return (
-    <footer className="bg-dark text-white py-6 px-6">
-      <div className="container mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-4 md:mb-0">
-            <p>&copy; {new Date().getFullYear()} Sistema de Análise de Sentimentos</p>
+    <footer className="bg-muted/40 border-t py-6">
+      <div className="container-custom">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} SentiMentor - Análise de Sentimentos para Português
+            </p>
           </div>
-          <div className="flex space-x-4">
-            <a href="#" className="text-gray-300 hover:text-white transition">Ajuda</a>
-            <a href="#" className="text-gray-300 hover:text-white transition">Termos</a>
-            <a href="#" className="text-gray-300 hover:text-white transition">Privacidade</a>
+          <div className="flex space-x-6">
+            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Documentação da API
+            </a>
+            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Integração Spring
+            </a>
+            <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Sobre o Projeto
+            </a>
           </div>
+        </div>
+        <div className="mt-6 pt-6 border-t text-center text-xs text-muted-foreground/70">
+          <p>
+            Desenvolvido com tecnologias modernas | Suporte para Google Gemini e OpenAI
+          </p>
         </div>
       </div>
     </footer>

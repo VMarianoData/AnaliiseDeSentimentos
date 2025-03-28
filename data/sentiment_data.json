@@ -19,5 +19,33 @@
     "confidence": 95,
     "id": 3,
     "createdAt": "2025-03-27T11:58:19.589Z"
+  },
+  {
+    "text": "Isso é um teste de integração com o Spring Boot.",
+    "sentiment": "neutral",
+    "confidence": 95,
+    "id": 4,
+    "createdAt": "2025-03-27T13:21:05.340Z"
+  },
+  {
+    "text": "Isso é um teste de integração com o Spring Boot.",
+    "sentiment": "neutral",
+    "confidence": 95,
+    "id": 5,
+    "createdAt": "2025-03-27T13:21:37.409Z"
+  },
+  {
+    "text": "Este texto vem do frontend Spring e é um teste de integração com o nosso sistema.",
+    "sentiment": "neutral",
+    "confidence": 95,
+    "id": 6,
+    "createdAt": "2025-03-27T15:45:36.404Z"
+  },
+  {
+    "text": "é o melhor sistema que já usei na minha vida\n",
+    "sentiment": "positive",
+    "confidence": 95,
+    "id": 7,
+    "createdAt": "2025-03-27T16:47:54.214Z"
   }
 ]

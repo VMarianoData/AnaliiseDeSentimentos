@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { registerSpringRoutes } from "./spring-integration";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Registrar rotas Spring primeiro para evitar conflitos com o Vite
+  registerSpringRoutes(app);
+  
+  // Em seguida, registrar rotas regulares
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

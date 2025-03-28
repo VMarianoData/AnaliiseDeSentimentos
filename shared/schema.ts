@@ -55,6 +55,7 @@ export interface SentimentResponse {
   sentiment: SentimentType;
   confidence: number;
   createdAt: string;
+  source?: string; // Identificador opcional do serviço que realizou a análise ("spring" ou "local")
 }
 
 // Modelo para estatísticas
