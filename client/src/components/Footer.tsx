@@ -5,7 +5,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} SentiMentor - Análise de Sentimentos para Português
+              &copy; {new Date().getFullYear()} EcoBit - Análise de Sentimentos da EcoBit
             </p>
           </div>
           <div className="flex space-x-6">

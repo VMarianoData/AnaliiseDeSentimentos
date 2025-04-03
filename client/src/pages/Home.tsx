@@ -10,7 +10,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           <div className="mb-10 text-center">
             <h1 className="gradient-heading mb-4">
-              Análise de Sentimentos em Português
+              Análise de Sentimentos da EcoBit
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
               Descubra as emoções presentes em seus textos utilizando inteligência artificial otimizada para a língua portuguesa.

@@ -1,4 +1,4 @@
-# Sistema de Análise de Sentimentos em Português
+# EcoBit - Sistema de Análise de Sentimentos
 
 Um sistema de análise de sentimentos para textos em português usando inteligência artificial, com interface visual intuitiva, armazenamento local e API para integração com outras aplicações.
 

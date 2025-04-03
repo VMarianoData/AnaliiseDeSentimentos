@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { SentimentFilter } from "./SentimentFilter";
@@ -18,6 +18,64 @@ export function StatsDashboard() {
     neutral: true,
     period: "all"
   });
+  
+  // Referência ao WebSocket
+  const wsRef = useRef<WebSocket | null>(null);
+  
+  // Configurar WebSocket para atualizações em tempo real
+  useEffect(() => {
+    // Determinar o protocolo (ws ou wss)
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    
+    // Criar a conexão WebSocket
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+    
+    // Lidar com a abertura da conexão
+    ws.onopen = () => {
+      console.log("Conexão WebSocket estabelecida");
+    };
+    
+    // Lidar com mensagens recebidas
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "newAnalysis") {
+          console.log("Nova análise recebida, atualizando dados...");
+          // Atualizar os dados
+          refetchAnalyses();
+          refetchStats();
+          
+          // Mostrar notificação
+          toast({
+            title: "Nova análise registrada",
+            description: "Os dados foram atualizados automaticamente.",
+            variant: "default"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao processar mensagem WebSocket:", error);
+      }
+    };
+    
+    // Lidar com erros
+    ws.onerror = (error) => {
+      console.error("Erro na conexão WebSocket:", error);
+    };
+    
+    // Lidar com o fechamento da conexão
+    ws.onclose = () => {
+      console.log("Conexão WebSocket fechada");
+    };
+    
+    // Limpar a conexão quando o componente for desmontado
+    return () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+      }
+    };
+  }, []); // Executar apenas uma vez na montagem do componente
 
   // Consulta das análises com filtros
   const {

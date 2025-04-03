@@ -13,7 +13,7 @@ export function Header() {
               <path d="M5 5v14"></path>
             </svg>
           </div>
-          <span className="font-heading font-bold text-xl">SentiMentor</span>
+          <span className="font-heading font-bold text-xl">EcoBit</span>
         </Link>
         
         <nav className="flex items-center">

@@ -1,9 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { analyzeSentiment } from "./services/ai";
 import { z } from "zod";
 import { SentimentType, analysisFormSchema } from "@shared/schema";
+import PDFDocument from "pdfkit";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API para análise de sentimento
@@ -33,6 +35,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Salvar no armazenamento e obter o resultado completo
       const savedAnalysis = await storage.saveSentimentAnalysis(sentimentResult);
+      
+      // Notificar todos os clientes conectados sobre a nova análise
+      if ((global as any).notifyNewAnalysis) {
+        (global as any).notifyNewAnalysis();
+      }
       
       // Retornar o resultado
       return res.status(201).json({
@@ -171,6 +178,343 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API para exportar análises em PDF
+  app.get("/api/export/pdf", async (req, res) => {
+    try {
+      // Obter todas as análises
+      const analyses = await storage.getSentimentAnalyses();
+      
+      if (analyses.length === 0) {
+        return res.status(404).json({ message: "Nenhuma análise encontrada para exportar" });
+      }
+      
+      // Criar um documento PDF
+      const doc = new PDFDocument({
+        margin: 50,
+        size: 'A4',
+      });
+      
+      // Configurar cabeçalhos para download
+      const fileName = `analises_sentimento_${new Date().toISOString().slice(0, 10)}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
+      
+      // Pipe o PDF para a resposta HTTP
+      doc.pipe(res);
+      
+      // Configurações de estilo
+      const titleFont = 'Helvetica-Bold';
+      const regularFont = 'Helvetica';
+      const tableTop = 150;
+      const lineHeight = 30; // Aumentado para dar mais espaço entre linhas
+      const textX = 40;
+      const cellPadding = 8; // Aumentado para dar mais espaço ao redor do texto
+      const pageWidth = doc.page.width - 80; // Reduzido margem para mais espaço
+      const columns = {
+        id: { 
+          x: textX, 
+          width: pageWidth * 0.08, 
+          title: 'ID',
+          align: 'left'
+        },
+        text: { 
+          x: textX + pageWidth * 0.08, 
+          width: pageWidth * 0.47, 
+          title: 'Texto',
+          align: 'left'
+        },
+        sentiment: { 
+          x: textX + pageWidth * 0.55, 
+          width: pageWidth * 0.15, 
+          title: 'Sentimento',
+          align: 'center'
+        },
+        confidence: { 
+          x: textX + pageWidth * 0.7, 
+          width: pageWidth * 0.12, 
+          title: 'Confiança',
+          align: 'center'
+        },
+        date: { 
+          x: textX + pageWidth * 0.82, 
+          width: pageWidth * 0.18, 
+          title: 'Data',
+          align: 'right'
+        },
+      };
+
+      // Adicionar cabeçalho
+      doc.font(titleFont)
+         .fontSize(24)
+         .fillColor('#1f8a58')
+         .text('EcoBit - Análise de Sentimentos', { align: 'center' });
+
+      // Adicionar subtítulo
+      doc.moveDown()
+         .fontSize(14)
+         .fillColor('#666')
+         .text('Relatório de Análises', { align: 'center' });
+         
+      // Adicionar informações do relatório
+      const dataAtual = new Date().toLocaleDateString('pt-BR');
+      const horaAtual = new Date().toLocaleTimeString('pt-BR');
+      
+      doc.moveDown(0.5)
+         .font(regularFont)
+         .fontSize(10)
+         .fillColor('#666666')
+         .text(`Data: ${dataAtual}`, textX, doc.y, { align: 'left', continued: true })
+         .text(`Hora: ${horaAtual}`, { align: 'right' })
+         .text(`Total de registros: ${analyses.length}`, textX, doc.y + 15, { align: 'left' })
+         .moveDown(1.5);
+
+      // Espaçamento adicional antes da tabela
+      doc.moveDown();
+      
+      // Adicionar linha de estatísticas
+      doc.moveDown(2)
+         .fontSize(12)
+         .fillColor('#333');
+      
+      // Calcular estatísticas
+      const positiveCount = analyses.filter(a => a.sentiment === 'positive').length;
+      const negativeCount = analyses.filter(a => a.sentiment === 'negative').length;
+      const neutralCount = analyses.filter(a => a.sentiment === 'neutral').length;
+      
+      doc.text(`Total de análises: ${analyses.length} | Positivas: ${positiveCount} | Negativas: ${negativeCount} | Neutras: ${neutralCount}`, { align: 'center' });
+
+      // Desenhar cabeçalho da tabela
+      doc.moveDown(2)
+         .font(titleFont)
+         .fontSize(12)
+         .fillColor('#ffffff');
+      
+      // Desenhar retângulo de fundo para o cabeçalho da tabela
+      doc.rect(textX - cellPadding, 
+               tableTop - cellPadding, 
+               pageWidth + (cellPadding * 2), 
+               lineHeight + (cellPadding * 2))
+         .fill('#2E7D32'); // Verde mais escuro para melhor contraste
+      
+      // Desenhar textos do cabeçalho
+      doc.fillColor('#ffffff')
+         .fontSize(12);
+      Object.values(columns).forEach(column => {
+        doc.text(
+          column.title, 
+          column.x, 
+          tableTop + 8, // Posicionamento melhorado
+          { width: column.width, align: column.align as any }
+        );
+      });
+      
+      // Desenhar linhas da tabela
+      doc.font(regularFont).fillColor('#000000');
+      
+      let y = tableTop + lineHeight + cellPadding;
+      
+      // Desenhar cada linha com dados
+      analyses.forEach((analysis, i) => {
+        // Verificar se é necessário adicionar uma nova página
+        if (y > doc.page.height - 100) {
+          doc.addPage();
+          // Resetar a posição Y para o topo da nova página
+          y = 100;
+          
+          // Desenhar cabeçalho da tabela na nova página
+          doc.font(titleFont)
+             .fontSize(12)
+             .fillColor('#ffffff');
+          
+          doc.rect(textX - cellPadding, 
+                  y - cellPadding, 
+                  pageWidth + (cellPadding * 2), 
+                  lineHeight + (cellPadding * 2))
+             .fill('#2E7D32'); // Verde mais escuro para melhor contraste
+          
+          // Desenhar textos do cabeçalho
+          doc.fillColor('#ffffff')
+             .fontSize(12);
+          Object.values(columns).forEach(column => {
+            doc.text(
+              column.title, 
+              column.x, 
+              y + 8, // Posicionamento melhorado
+              { width: column.width, align: column.align as any }
+            );
+          });
+          
+          doc.font(regularFont).fillColor('#000000');
+          y += lineHeight + cellPadding;
+        }
+        
+        // Cor de fundo alternada para as linhas (claro/escuro)
+        const rowColor = i % 2 === 0 ? '#f5f5f5' : '#ffffff';
+        doc.rect(textX - cellPadding, 
+                y - cellPadding, 
+                pageWidth + (cellPadding * 2), 
+                lineHeight + (cellPadding * 2))
+           .fill(rowColor);
+        
+        // Definir o texto de cada coluna
+        // ID
+        doc.fillColor('#000000')
+           .font(regularFont)
+           .fontSize(11)
+           .text(
+             analysis.id.toString(), 
+             columns.id.x, 
+             y + 8, 
+             { width: columns.id.width, align: columns.id.align as any }
+           );
+        
+        // Texto (truncado para caber na célula)
+        const truncatedText = analysis.text.length > 80 
+          ? analysis.text.substring(0, 80) + '...' 
+          : analysis.text;
+          
+        // Garantir que o texto seja exibido em preto
+        doc.fillColor('#000000')
+           .font(regularFont)
+           .fontSize(11)
+           .text(
+             truncatedText, 
+             columns.text.x, 
+             y + 8, 
+             { width: columns.text.width, align: columns.text.align as any }
+           );
+        
+        // Sentimento (com cores)
+        let sentimentText = '';
+        let sentimentColor = '#000000';
+        
+        switch (analysis.sentiment) {
+          case 'positive':
+            sentimentText = 'Positivo';
+            sentimentColor = '#389e6d';
+            break;
+          case 'negative':
+            sentimentText = 'Negativo';
+            sentimentColor = '#e53935';
+            break;
+          case 'neutral':
+            sentimentText = 'Neutro';
+            sentimentColor = '#757575';
+            break;
+        }
+        
+        doc.fillColor(sentimentColor)
+           .fontSize(11)
+           .text(
+             sentimentText, 
+             columns.sentiment.x, 
+             y + 8, 
+             { width: columns.sentiment.width, align: columns.sentiment.align as any }
+           )
+           .fillColor('#000000');
+        
+        // Confiança
+        doc.fillColor('#000000')
+           .fontSize(11)
+           .text(
+             `${Math.round(analysis.confidence * 100)}%`, 
+             columns.confidence.x, 
+             y + 8, 
+             { width: columns.confidence.width, align: columns.confidence.align as any }
+           );
+        
+        // Data
+        const date = new Date(analysis.createdAt).toLocaleDateString('pt-BR');
+        doc.fillColor('#000000')
+           .fontSize(11)
+           .text(
+             date, 
+             columns.date.x, 
+             y + 8, 
+             { width: columns.date.width, align: columns.date.align as any }
+           );
+        
+        // Incrementar a posição Y para a próxima linha
+        y += lineHeight + (cellPadding * 2);
+      });
+      
+      // Garantir que haja pelo menos 70 pontos de espaço antes do rodapé
+      // Se a posição atual Y estiver muito próxima do final da página, adiciona uma nova página
+      if (y > doc.page.height - 100) {
+        doc.addPage();
+        y = 100;
+      } else {
+        // Se não for necessário uma nova página, adiciona espaço entre a última linha da tabela e o rodapé
+        y += 50;
+      }
+      
+      // Adicionar uma linha separadora
+      doc.strokeColor('#cccccc')
+         .lineWidth(0.5)
+         .moveTo(textX, doc.page.height - 70)
+         .lineTo(textX + pageWidth, doc.page.height - 70)
+         .stroke();
+      
+      // Adicionar rodapé
+      doc.fontSize(9)
+         .fillColor('#666')
+         .text(
+          `EcoBit - Análise de Sentimentos | Relatório gerado em ${new Date().toLocaleString('pt-BR')}`,
+          textX,
+          doc.page.height - 50,
+          { width: pageWidth, align: 'center' }
+         );
+
+      // Finalizar o documento
+      doc.end();
+      
+    } catch (error) {
+      console.error("Erro ao exportar PDF:", error);
+      return res.status(500).json({ 
+        message: "Erro ao exportar PDF", 
+        error: (error as Error).message 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
+  
+  // Configurar WebSocket Server para atualizações em tempo real
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Armazenar conexões ativas
+  const clients = new Set<WebSocket>();
+  
+  wss.on('connection', (ws) => {
+    console.log('Nova conexão WebSocket estabelecida');
+    
+    // Adicionar nova conexão ao conjunto
+    clients.add(ws);
+    
+    // Remover conexão quando fechada
+    ws.on('close', () => {
+      console.log('Conexão WebSocket fechada');
+      clients.delete(ws);
+    });
+    
+    // Enviar mensagem inicial
+    ws.send(JSON.stringify({ type: 'connected', message: 'Conectado ao servidor WebSocket' }));
+  });
+  
+  // Função para notificar todos os clientes sobre novas análises
+  const notifyNewAnalysis = () => {
+    clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ 
+          type: 'newAnalysis', 
+          message: 'Nova análise de sentimento registrada' 
+        }));
+      }
+    });
+  };
+  
+  // Adicionar função ao objeto global para acesso de outros arquivos
+  (global as any).notifyNewAnalysis = notifyNewAnalysis;
+  
   return httpServer;
 }

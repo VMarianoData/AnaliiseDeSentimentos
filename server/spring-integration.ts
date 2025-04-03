@@ -38,6 +38,12 @@ springRouter.post("/spring-sentiment", async (req, res) => {
     // Salvar no armazenamento e obter o resultado completo
     const savedAnalysis = await storage.saveSentimentAnalysis(sentimentResult);
     
+    // Notificar clientes web sobre a nova análise via WebSocket
+    if ((global as any).notifyNewAnalysis) {
+      log("Notificando clientes web sobre nova análise via Spring", "spring");
+      (global as any).notifyNewAnalysis();
+    }
+    
     // Retornar o resultado em um formato que o Spring possa processar facilmente
     return res.status(200).json({
       id: savedAnalysis.id,
