@@ -213,33 +213,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const columns = {
         id: { 
           x: textX, 
-          width: pageWidth * 0.08, 
+          width: pageWidth * 0.06, 
           title: 'ID',
           align: 'left'
         },
         text: { 
-          x: textX + pageWidth * 0.08, 
-          width: pageWidth * 0.47, 
+          x: textX + pageWidth * 0.06, 
+          width: pageWidth * 0.40, 
           title: 'Texto',
           align: 'left'
         },
         sentiment: { 
-          x: textX + pageWidth * 0.55, 
+          x: textX + pageWidth * 0.46, 
           width: pageWidth * 0.15, 
           title: 'Sentimento',
           align: 'center'
         },
         confidence: { 
-          x: textX + pageWidth * 0.7, 
-          width: pageWidth * 0.12, 
+          x: textX + pageWidth * 0.61, 
+          width: pageWidth * 0.14, 
           title: 'Confiança',
           align: 'center'
         },
         date: { 
-          x: textX + pageWidth * 0.82, 
-          width: pageWidth * 0.18, 
+          x: textX + pageWidth * 0.75, 
+          width: pageWidth * 0.11, 
           title: 'Data',
-          align: 'right'
+          align: 'center'
+        },
+        time: { 
+          x: textX + pageWidth * 0.86, 
+          width: pageWidth * 0.14, 
+          title: 'Horário',
+          align: 'center'
         },
       };
 
@@ -368,20 +374,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
              { width: columns.id.width, align: columns.id.align as any }
            );
         
-        // Texto (truncado para caber na célula)
-        const truncatedText = analysis.text.length > 80 
-          ? analysis.text.substring(0, 80) + '...' 
-          : analysis.text;
-          
-        // Garantir que o texto seja exibido em preto
+        // Texto (truncado visualmente mas mantendo texto completo)
         doc.fillColor('#000000')
            .font(regularFont)
            .fontSize(11)
            .text(
-             truncatedText, 
-             columns.text.x, 
-             y + 8, 
-             { width: columns.text.width, align: columns.text.align as any }
+             analysis.text,
+             columns.text.x,
+             y + 8,
+             {
+               width: columns.text.width,
+               align: columns.text.align as any,
+               ellipsis: true
+             }
            );
         
         // Sentimento (com cores)
@@ -424,7 +429,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
            );
         
         // Data
-        const date = new Date(analysis.createdAt).toLocaleDateString('pt-BR');
+        const analysisDate = new Date(analysis.createdAt);
+        const date = analysisDate.toLocaleDateString('pt-BR');
         doc.fillColor('#000000')
            .fontSize(11)
            .text(
@@ -432,6 +438,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
              columns.date.x, 
              y + 8, 
              { width: columns.date.width, align: columns.date.align as any }
+           );
+           
+        // Horário
+        const time = analysisDate.toLocaleTimeString('pt-BR');
+        doc.fillColor('#000000')
+           .fontSize(11)
+           .text(
+             time, 
+             columns.time.x, 
+             y + 8, 
+             { width: columns.time.width, align: columns.time.align as any }
            );
         
         // Incrementar a posição Y para a próxima linha
